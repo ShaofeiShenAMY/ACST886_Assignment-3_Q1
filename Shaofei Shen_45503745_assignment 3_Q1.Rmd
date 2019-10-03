@@ -1,0 +1,130 @@
+---
+title: "Shaofei Shen_45503745_assignment 3_Q1"
+author: "Shaofei Shen"
+date: "2019/10/3"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Q1
+#### (a)
+##### (i)
+inpet the known data
+```{r}
+x <- c()
+x[55:58]<-c(55,56,57,58)
+qx<-c()
+qx[55:57]<-c(0.001046,0.001199,0.001375)
+lx <- c()
+lx[55] <- 100000
+```
+generate $l_X$ using $d_x=l_x*q_x$ $l_{x+1}=l_x-d_x$ and $_tp_x=l_{x+t}/l_x$
+```{r}
+dx <- c()
+
+for (j in 55:58) {
+  dx[j] <-lx[j]*qx[j]
+  lx[j+1] <-lx[j]-dx[j]
+}
+lx[55:58]
+tpx<-c()
+for (j in 55:57) {
+  tpx[j] <-lx[j+1]/lx[55]
+}
+tpx[55:57]
+survival_table <- cbind(x[55:58],qx[55:58],lx[55:58],tpx[55:58])
+colnames(survival_table) <- c("x","qx", "lx","tpx")
+survival_table
+```
+Because the benefit increasing at the rate at 1.92308% per annum. Using Geometric progressions,the product is finally calculate at the interest rate of $i_1=\frac{1+6%}{1+1.92308%}$
+```{r}
+i_1=(1+0.06)/(1+0.0192308)-1
+v<-(1/(1+i_1))
+d<-1-v
+i_1; v; d
+```
+policy vallue can be calculated by the difference of expected future outgo and future income. Except at the beginning collect the premium. the future outgo is ${a}_{56\,:\,\overline{2}|}$ at the end of the year one and ${a}_{57\,:\,\overline{1}|}$ and at the end of the policy the policy value will reach 0.  ${a}_{x\,:\,\overline{n}|}=\frac{v-{A}_{x\,:\,\overline{n+1}|}}{d}$, since we have the value of 
+${a}_{56\,:\,\overline{2}|}=\frac{v-{A}_{56\,:\,\overline{3}|}}{d}$; ${a}_{57\,:\,\overline{1}|}=\frac{v-{A}_{57\,:\,\overline{2}|}}{d}$.
+```{r}
+A_56_3<-0.889132
+A_57_2<-0.924607
+ax_n<-c()
+ax_n[55:57]<-c((v-A_56_3)/d*15000,(v-A_57_2)/d*15288.46,0)
+ax_n[55:57]
+```
+create the cashflow table before consider about the probability
+```{r}
+premium<-c()
+premium[55:57]<-c(40250,0,0)
+expense_begin<-c()
+expense_begin[55:57]<-c(100+0.015*40250,0,0)
+expense_end<-c()
+expense_end[55:57]<-c(10,10*1.05, 10*(1.05)^2)
+benefit<-c()
+benefit[55:57]<-c(15000,15000*1.0192308,15000*(1.0192308)^2)
+cashflow_table <- cbind(x[55:57],premium[55:57],expense_begin[55:57],expense_end[55:57], benefit[55:57],ax_n[55:57])
+colnames(cashflow_table) <- c("age","premium","expense_begin", "expense_end","benefit","policy value")
+cashflow_table
+```
+Multiply the cashflow with the probability gives the expected cashflows by multiply the cashflow by the survival probability $_tp_x$.
+```{r}
+expense_end_exp<-c()
+expense_end_exp[55:57]<-expense_end[55:57]*tpx[55:57]
+
+benefit_exp<-c()
+benefit_exp[55:57] <- benefit[55:57]*tpx[55:57]
+
+policy_value_exp<-c()
+policy_value_exp[55:56]<-ax_n[55:56]*tpx[55:56]
+policy_value_exp[57]<-0
+policy_value_exp[54]<-0
+
+interestrate<-c()
+for (j in 55:57) {
+  interestrate[j]<-(policy_value_exp[j-1]+premium[j]-expense_begin[j])*0.08
+}
+
+
+transfer<-c()
+for(j in 55:57){
+  transfer[j]<-policy_value_exp[j-1]+premium[j]-expense_begin[j]-expense_end_exp[j]-benefit_exp[j]+interestrate[j]-
+    policy_value_exp[j]
+}
+
+profit_testing<- cbind(x[55:57],premium[55:57],expense_begin[55:57],expense_end_exp[55:57],
+                       benefit_exp[55:57],interestrate[55:57],policy_value_exp[55:57],transfer[55:57])
+colnames(profit_testing) <- c("age","premium","expense_begin", "expense_end","benefit","interest","policy_value","transfer")
+profit_testing
+```
+The profit signiture is the same as the transfer in the table above.
+
+##### (ii)
+The premium is collected only at the begining of the the policy started, and there is no futher premium receive during the policy. 
+```{r}
+i<-0.12
+EPVtransfers<-sum(transfer[55:57]/(1+i)^(1:3))
+EPVpremium<-sum(premium[55:57]/(1+i)^(0:2))
+EPVtransfers
+EPVpremium
+```
+profit margin is calculated by $\frac{EPV(profit)}{EPV(premium)}$
+```{r}
+profit_margin<-EPVtransfers/EPVpremium
+profit_margin
+```
+The profit margin is given by 0.005010716
+
+#### (b)
+find out IRR, which is the interest rate discount all the cash flow back and give a present value of 0.
+```{r}
+EPV<-function(irr){
+  EPV<-sum(transfer[55:57]/(1+irr)^(1:3))
+  return(EPV)
+}
+uniroot(EPV,c(0.4,0.6))
+```
+The IRR is 50.28% and approximately 50%. 
+The IRR is large because the transfer at the end of first year is large and negative (-493). So we need a higher return in the future to cover the negative cashflow at the begining.
